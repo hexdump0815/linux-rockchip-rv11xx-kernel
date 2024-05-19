@@ -1,0 +1,13 @@
+diff --git a/sysdrv/source/kernel/scripts/setlocalversion b/sysdrv/source/kernel/scripts/setlocalversion
+index 842936656..2899f537f 100755
+--- a/sysdrv/source/kernel/scripts/setlocalversion
++++ b/sysdrv/source/kernel/scripts/setlocalversion
+@@ -76,7 +76,7 @@ scm_version()
+ 
+ 			# If only the short version is requested, don't bother
+ 			# running further git commands
+-			if $short; then
++			if true; then
+ 				echo "+"
+ 				return
+ 			fi

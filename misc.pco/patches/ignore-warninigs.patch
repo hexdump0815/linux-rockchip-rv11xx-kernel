@@ -1,0 +1,13 @@
+diff --git a/sysdrv/source/kernel/Makefile b/sysdrv/source/kernel/Makefile
+index 5ad3bc7f4..3ec47197b 100644
+--- a/sysdrv/source/kernel/Makefile
++++ b/sysdrv/source/kernel/Makefile
+@@ -520,7 +520,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Werror=strict-prototypes -Wno-trigraphs \
+ 		   -fno-strict-aliasing -fno-common -fshort-wchar -fno-PIE \
+ 		   -Werror=implicit-function-declaration -Werror=implicit-int \
+ 		   -Werror=return-type -Wno-format-security \
+-		   -std=gnu89
++		   -std=gnu89 -Wno-array-compare -Wno-stringop-overread
+ KBUILD_CPPFLAGS := -D__KERNEL__
+ KBUILD_AFLAGS_KERNEL :=
+ KBUILD_CFLAGS_KERNEL :=

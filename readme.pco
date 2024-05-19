@@ -1,0 +1,65 @@
+# directories:
+# - /compile/doc/rv11xx - the files in this dir
+# - /compile/source/linux-rv11xx-pco - the kernel sources checked out from gitrepo
+# - /compile/result/rv11xx - the resulting kernel, modules etc. tar.gz files
+# - /compile/doc/kernel-config-options - https://github.com/hexdump0815/kernel-config-options
+# name: lkf-pco - rv11xx legacy rockchip linux v5.10.110 kernel tree with luckfox pico addtions
+
+# info: this is based on commit 1e160dee559c6cb638e3d078b543fbcd2fab9699 of the rv11xx legacy linux v5.10.110 kernel tree
+# TODO  some more things besides the kernel have to be compiled in the following order:
+#       - readme.u-boot (u-boot)
+#       - readme.pco (kernel)
+#       this needs to be installed: apt-get -y install python-is-python3
+# IMPORTANT: this so far only allows to compile a kernel, no testing has been
+#            done yet if that kernel really works as first some boot related
+#            topics will have to be sorted out
+
+cd /compile/source/linux-rv11xx-pco/sysdrv/source/kernel
+
+# patches
+# ignore some warninigs as they would -Werror break the compilation with newer compilers
+patch -p1 < /compile/doc/rv11xx/misc.pco/patches/ignore-warninigs.patch
+# fix kernel version number: + instead of -dirty at the end
+patch -p1 < /compile/doc/rv11xx/misc.pco/patches/fix-kernel-version-number.patch
+
+export ARCH=arm
+# lets start with the rv11xx pco linux defconfig and later adjust options from there
+scripts/kconfig/merge_config.sh -m arch/arm/configs/luckfox_rv1106_linux_defconfig /compile/doc/rv11xx/misc.pco/options/additional-options-special.cfg
+#scripts/kconfig/merge_config.sh -m arch/arm/configs/luckfox_rv1106_linux_defconfig /compile/doc/kernel-config-options/docker-options.cfg /compile/doc/kernel-config-options/options-to-remove-generic.cfg /compile/doc/rv11xx/misc.pco/options/options-to-remove-special.cfg /compile/doc/kernel-config-options/additional-options-generic.cfg /compile/doc/kernel-config-options/additional-options-armv7l.cfg /compile/doc/rv11xx/misc.pco/options/additional-options-special.cfg
+( cd /compile/doc/kernel-config-options ; git rev-parse --verify HEAD ) > /compile/doc/rv11xx/misc.pco/options/kernel-config-options.version
+make olddefconfig
+make -j 4 zImage dtbs modules
+# the tools will not work due to libc etc. differences when compiled on debian and run on alpine
+#cd tools/perf
+# without this it would fail on warnings
+#export WERROR=0
+#make
+#cd ../power/cpupower
+#make
+#cd ../../..
+export kver=`make kernelrelease`
+echo ${kver}
+# remove debug info if there and not wanted
+#find . -type f -name '*.ko' | sudo xargs -n 1 objcopy --strip-unneeded
+make modules_install
+# the tools will not work due to libc etc. differences when compiled on debian and run on alpine
+#mkdir -p /lib/modules/${kver}/tools
+#cp -v tools/perf/perf /lib/modules/${kver}/tools
+#cp -v tools/power/cpupower/cpupower /lib/modules/${kver}/tools
+#cp -v tools/power/cpupower/libcpupower.so.0.0.1 /lib/modules/${kver}/tools/libcpupower.so.0
+# make headers_install INSTALL_HDR_PATH=/usr
+mkdir -p /boot
+cp -v .config /boot/config-${kver}
+cp -v arch/arm/boot/zImage /boot/zImage-${kver}
+mkdir -p /boot/dtb-${kver}
+cp -v arch/arm/boot/dts/rv11*.dtb /boot/dtb-${kver}
+cp -v System.map /boot/System.map-${kver}
+cd /boot
+# no initrd for now
+#update-initramfs -c -k ${kver}
+#tar cvzf /compile/source/linux-rv11xx-pco/${kver}.tar.gz /boot/zImage-${kver} /boot/System.map-${kver} /boot/config-${kver} /boot/dtb-${kver} /boot/initrd.img-${kver} /lib/modules/${kver}
+tar cvzf /compile/source/linux-rv11xx-pco/${kver}.tar.gz /boot/zImage-${kver} /boot/System.map-${kver} /boot/config-${kver} /boot/dtb-${kver} /lib/modules/${kver}
+cp -v /compile/doc/rv11xx/config.pco /compile/doc/rv11xx/config.pco.old
+cp -v /compile/source/linux-rv11xx-pco/.config /compile/doc/rv11xx/config.pco
+cp -v /compile/source/linux-rv11xx-pco/.config /compile/doc/rv11xx/config.pco-${kver}
+cp -v /compile/source/linux-rv11xx-pco/*.tar.gz /compile/result/rv11xx
